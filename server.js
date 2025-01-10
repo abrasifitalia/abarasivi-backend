@@ -2,35 +2,72 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const userRoutes = require('./routes/userRoutes'); // Routes utilisateur
+const path = require('path');
+
+// Routes imports
+const userRoutes = require('./routes/userRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const subcategoryRoutes = require('./routes/subcategoryRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const viewRoutes = require('./routes/viewRoutes');
 const orderRoutes = require('./routes/orderRoutes');
-const dashboardRoutes = require('./routes/dashboard'); // Importez le fichier de route
+const dashboardRoutes = require('./routes/dashboard');
 const clientRoules = require('./routes/ClientRoutes');
-dotenv.config(); // Charger les variables d'environnement depuis .env
 
-const path = require('path');
+dotenv.config();
+
 const app = express();
-
 const port = process.env.PORT || 5000;
 
-// Middleware pour permettre le CORS et parser le corps des requêtes en JSON
+// Enhanced CORS configuration
+const allowedOrigins = [
+    'http://abrasifitalia.com', 
+    'https://abrasifitalia.com',
+    'http://www.abrasifitalia.com',
+    'https://www.abrasifitalia.com',
+    'http://localhost:3000'
+];
+
 app.use(cors({
-    origin: ['http://abrasifitalia.com', 'https://abrasifitalia.com'],
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-app.use(express.json()); // Placer ici l'appel à `express.json()`
 
-// Connexion à MongoDB
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+// Preflight requests
+app.options('*', cors());
 
-// Routes publiques
+// Middleware
+app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log('Request from origin:', req.headers.origin);
+    console.log('Request method:', req.method);
+    console.log('Request headers:', req.headers);
+    next();
+});
+
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.log('MongoDB connection error:', err));
+
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/subcategory', subcategoryRoutes);
@@ -40,20 +77,25 @@ app.use('/api/view', viewRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api/client', clientRoules);
-// Route de déconnexion
-app.post('/api/logout', (req, res) => {
-    // Ici, vous pouvez ajouter des opérations pour invalider le token ou le supprimer du côté serveur si nécessaire.
-    // Par exemple, stocker les tokens invalidés dans une base de données ou une liste (si vous avez un mécanisme pour cela).
 
+// Logout route
+app.post('/api/logout', (req, res) => {
     res.status(200).json({ message: 'Logout successful' });
 });
 
-
-
-// Servir les fichiers statiques depuis le dossier 'public/uploads'
+// Static files
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// Démarrer le serveur
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err.stack);
+    res.status(500).json({
+        error: 'Something went wrong!',
+        message: err.message
+    });
+});
+
+// Start server
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
