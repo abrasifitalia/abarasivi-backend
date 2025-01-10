@@ -26,7 +26,8 @@ const allowedOrigins = [
     'https://abrasifitalia.com',
     'http://www.abrasifitalia.com',
     'https://www.abrasifitalia.com',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://localhost:3001'
 ];
 
 app.use(cors({
