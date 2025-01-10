@@ -19,7 +19,10 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware pour permettre le CORS et parser le corps des requêtes en JSON
-app.use(cors());
+app.use(cors({
+    origin: ['http://abrasifitalia.com', 'https://abrasifitalia.com'],
+    credentials: true
+}));
 app.use(express.json()); // Placer ici l'appel à `express.json()`
 
 // Connexion à MongoDB
