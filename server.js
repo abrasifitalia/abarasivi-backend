@@ -21,29 +21,40 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Enhanced CORS configuration
-const allowedOrigins = [
-    'http://abrasifitalia.com', 
+const whitelist = [
     'https://abrasifitalia.com',
-    'http://www.abrasifitalia.com',
+    'http://abrasifitalia.com', 
     'https://www.abrasifitalia.com',
+    'http://www.abrasifitalia.com',
     'http://localhost:3000',
-    'http://localhost:3001'
+    'http://46.202.173.108:5000',  // Add the IP address
+    'http://46.202.173.108'        // Add without port
 ];
 
 app.use(cors({
-    origin: function(origin, callback) {
+    origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+        if (!origin) {
+            return callback(null, true);
         }
-        return callback(null, true);
+        
+        // Check if origin matches any whitelist entry (including wildcards)
+        const isAllowed = whitelist.some(allowedOrigin => {
+            return origin === allowedOrigin || origin.startsWith(allowedOrigin.replace('*', ''));
+        });
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.log('Blocked origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    credentials: true,
+    maxAge: 86400  // Cache preflight requests for 24 hours
 }));
 
 // Preflight requests
