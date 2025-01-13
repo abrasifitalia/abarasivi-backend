@@ -23,9 +23,8 @@ const port = process.env.PORT || 5000;
 // Enhanced CORS configuration
 const whitelist = [
     'https://abrasifitalia.com',
-    'http://abrasifitalia.com', 
     'https://www.abrasifitalia.com',
-    'http://www.abrasifitalia.com',
+    'https://admin.abrasifitalia.com',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://46.202.173.108:5000',  // Add the IP address
