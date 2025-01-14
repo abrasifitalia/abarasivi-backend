@@ -25,6 +25,7 @@ const whitelist = [
     'https://abrasifitalia.com',
     'https://www.abrasifitalia.com',
     'https://admin.abrasifitalia.com',
+    'http://localhost:3000',
      // Add without port
 ];
 
