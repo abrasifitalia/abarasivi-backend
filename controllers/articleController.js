@@ -26,13 +26,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Ajouter un article avec image et vidéo
+// Ajouter un article avec image, vidéo et fiche technique
 const addArticle = async (req, res) => {
   try {
-    const { name, description, price, category, subcategory, fonctionnalite } = req.body;
+    const { name, description, price, category, subcategory, fonctionnalite, ficheTechnique } = req.body;
     
     // Vérifiez si tous les champs sont présents
-    if (!name || !description || !price || !category || !subcategory) {
+    if (!name || !description || !price || !category || !subcategory || !ficheTechnique) {
       return res.status(400).json({ message: 'Tous les champs requis doivent être remplis' });
     }
     const existingCategory = await Category.findById(category);
@@ -57,6 +57,7 @@ const addArticle = async (req, res) => {
       image,
       video,
       fonctionnalite,
+      ficheTechnique, // Ajout de la fiche technique
     });
 
     // Sauvegarder l'article dans la base de données
@@ -100,6 +101,11 @@ const updateArticle = async (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
     
+    // Vérifiez si la fiche technique est présente
+    if (!updatedData.ficheTechnique) {
+      return res.status(400).json({ message: 'La fiche technique est requise' });
+    }
+
     // Si des fichiers sont envoyés, mettez à jour les champs image et vidéo
     if (req.files['image']) {
       updatedData.image = '/uploads/' + req.files['image'][0].filename;
@@ -118,6 +124,7 @@ const updateArticle = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la mise à jour de l\'article' });
   }
 };
+
 const getArticle = async (req, res) => {
   try {
     const { id } = req.params; // Récupérer l'ID de l'article à partir des paramètres de la requête

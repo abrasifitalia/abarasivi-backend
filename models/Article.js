@@ -26,8 +26,12 @@ const articleSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  ficheTechnique: { // Ajout de la fiche technique
+    type: String,
+    required: false, // Optionnelle
+  },
   subcategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Subcategory', required: true },
- category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
 
 }, {
   timestamps: true,
