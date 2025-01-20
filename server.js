@@ -26,7 +26,7 @@ const whitelist = [
     'https://www.abrasifitalia.com',
     'https://admin.abrasifitalia.com',
     'http://localhost:3000',
-     // Add without port
+    'http://localhost:3001',
 ];
 
 app.use(cors({
