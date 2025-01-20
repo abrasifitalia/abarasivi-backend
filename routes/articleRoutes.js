@@ -5,7 +5,7 @@ const router = express.Router();
 //const multer = require('multer');
 const { addArticle, listArticles, deleteArticle, updateArticle, upload, getArticle } = require('../controllers/articleController');
 
-  router.post('/article', upload.fields([{ name: 'image' }, { name: 'video' }]),   addArticle);
+   router.post('/article', upload.fields([{ name: 'image' }, { name: 'video' }, { name: 'ficheTechnique' }]),   addArticle);
   
 
 // Lister tous les articles
