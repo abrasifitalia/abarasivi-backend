@@ -26,13 +26,13 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Ajouter un article avec image, vidéo et fiche technique
+// Ajouter un article avec image, vidéo et fiche technique (fichier PDF)
 const addArticle = async (req, res) => {
   try {
-    const { name, description, price, category, subcategory, fonctionnalite, ficheTechnique } = req.body;
+    const { name, description, price, category, subcategory, fonctionnalite } = req.body;
     
     // Vérifiez si tous les champs sont présents
-    if (!name || !description || !price || !category || !subcategory || !ficheTechnique) {
+    if (!name || !description || !price || !category || !subcategory || !req.files['ficheTechnique']) {
       return res.status(400).json({ message: 'Tous les champs requis doivent être remplis' });
     }
     const existingCategory = await Category.findById(category);
@@ -42,10 +42,10 @@ const addArticle = async (req, res) => {
       return res.status(400).json({ message: 'Catégorie ou sous-catégorie invalide' });
     }
 
-
-    // Si des fichiers sont envoyés (image, vidéo), récupérez leurs chemins
+    // Si des fichiers sont envoyés (image, vidéo, fiche technique), récupérez leurs chemins
     const image = req.files['image'] ? '/uploads/' + req.files['image'][0].filename : null;
     const video = req.files['video'] ? '/uploads/' + req.files['video'][0].filename : null;
+    const ficheTechnique = req.files['ficheTechnique'] ? '/uploads/' + req.files['ficheTechnique'][0].filename : null;
 
     // Créer un nouvel article
     const newArticle = new Article({
@@ -57,7 +57,7 @@ const addArticle = async (req, res) => {
       image,
       video,
       fonctionnalite,
-      ficheTechnique, // Ajout de la fiche technique
+      ficheTechnique, // Ajout de la fiche technique (fichier PDF)
     });
 
     // Sauvegarder l'article dans la base de données
@@ -102,16 +102,19 @@ const updateArticle = async (req, res) => {
     const updatedData = req.body;
     
     // Vérifiez si la fiche technique est présente
-    if (!updatedData.ficheTechnique) {
+    if (!req.files['ficheTechnique']) {
       return res.status(400).json({ message: 'La fiche technique est requise' });
     }
 
-    // Si des fichiers sont envoyés, mettez à jour les champs image et vidéo
+    // Si des fichiers sont envoyés, mettez à jour les champs image, vidéo et fiche technique
     if (req.files['image']) {
       updatedData.image = '/uploads/' + req.files['image'][0].filename;
     }
     if (req.files['video']) {
       updatedData.video = '/uploads/' + req.files['video'][0].filename;
+    }
+    if (req.files['ficheTechnique']) {
+      updatedData.ficheTechnique = '/uploads/' + req.files['ficheTechnique'][0].filename;
     }
 
     const article = await Article.findByIdAndUpdate(id, updatedData, { new: true });
