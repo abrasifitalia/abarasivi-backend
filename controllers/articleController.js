@@ -26,7 +26,10 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // Set limit to 10 MB (adjust as needed)
+});
 
 // Ajouter un article avec image, vidéo et fiche technique (fichier PDF)
 const addArticle = async (req, res) => {
