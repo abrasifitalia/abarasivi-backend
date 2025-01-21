@@ -32,7 +32,7 @@ const addArticle = async (req, res) => {
     const { name, description, price, category, subcategory, fonctionnalite } = req.body;
     
     // Vérifiez si tous les champs sont présents
-    if (!name || !description || !price || !category || !subcategory || !req.files['ficheTechnique']) {
+    if (!name || !description || !price || !category || !subcategory ) {
       return res.status(400).json({ message: 'Tous les champs requis doivent être remplis' });
     }
     const existingCategory = await Category.findById(category);
@@ -57,7 +57,7 @@ const addArticle = async (req, res) => {
       image,
       video,
       fonctionnalite,
-      ficheTechnique, // Ajout de la fiche technique (fichier PDF)
+      ficheTechnique, 
     });
 
     // Sauvegarder l'article dans la base de données
