@@ -74,7 +74,11 @@ app.use('/api/view', viewRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api', dashboardRoutes);
 app.use('/api/client', clientRoutes);
-
+app.use((req, res, next) => {
+    console.log(`Incoming request: ${req.method} ${req.url}`);
+    next();
+  });
+  
 // Logout route
 app.post('/api/logout', (req, res) => {
     res.status(200).json({ message: 'Logout successful' });

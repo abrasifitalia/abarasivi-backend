@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 const Article = require('../models/Article');
 const Category = require('../models/Category');
 const Subcategory = require('../models/Subcategory');
@@ -13,7 +14,6 @@ const storage = multer.diskStorage({
     // Vérifiez si le dossier uploads existe, sinon créez-le
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true }); // Créer le dossier s'il n'existe pas
-      console.log('Dossier uploads créé'); // Log pour la création du dossier
     }
     
     cb(null, uploadsDir); // Dossier où les fichiers seront stockés
@@ -21,7 +21,6 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const fileExtension = path.extname(file.originalname); // Extension du fichier
     const uniqueFilename = Date.now() + fileExtension; // Nom unique pour le fichier
-    console.log(`Fichier reçu: ${uniqueFilename}`); // Log pour le fichier reçu
     cb(null, uniqueFilename);
   },
 });
@@ -38,7 +37,6 @@ const addArticle = async (req, res) => {
     
     // Vérifiez si tous les champs sont présents
     if (!name || !description || !price || !category || !subcategory) {
-      console.log('Erreur: Tous les champs requis doivent être remplis'); // Log d'erreur
       return res.status(400).json({ message: 'Tous les champs requis doivent être remplis' });
     }
     
@@ -46,7 +44,6 @@ const addArticle = async (req, res) => {
     const existingSubcategory = await Subcategory.findById(subcategory);
 
     if (!existingCategory || !existingSubcategory) {
-      console.log('Erreur: Catégorie ou sous-catégorie invalide'); // Log d'erreur
       return res.status(400).json({ message: 'Catégorie ou sous-catégorie invalide' });
     }
 
@@ -57,15 +54,12 @@ const addArticle = async (req, res) => {
 
     // Vérifiez si les fichiers sont valides (par exemple, types de fichiers, taille)
     if (req.files['image'] && !['.jpg', '.jpeg', '.png'].includes(path.extname(req.files['image'][0].originalname))) {
-      console.log('Erreur: Format d\'image non valide'); // Log d'erreur
       return res.status(400).json({ message: 'Format d\'image non valide' });
     }
     if (req.files['video'] && !['.mp4', '.avi'].includes(path.extname(req.files['video'][0].originalname))) {
-      console.log('Erreur: Format de vidéo non valide'); // Log d'erreur
       return res.status(400).json({ message: 'Format de vidéo non valide' });
     }
     if (req.files['ficheTechnique'] && path.extname(req.files['ficheTechnique'][0].originalname) !== '.pdf') {
-      console.log('Erreur: La fiche technique doit être un fichier PDF'); // Log d'erreur
       return res.status(400).json({ message: 'La fiche technique doit être un fichier PDF' });
     }
 
@@ -84,7 +78,6 @@ const addArticle = async (req, res) => {
 
     // Sauvegarder l'article dans la base de données
     await newArticle.save();
-    console.log('Article ajouté avec succès:', newArticle); // Log de succès
     res.status(201).json({ message: 'Article ajouté avec succès', article: newArticle });
   } catch (error) {
     console.error(error);
@@ -96,7 +89,6 @@ const addArticle = async (req, res) => {
 const listArticles = async (req, res) => {
   try {
     const articles = await Article.find();
-    console.log('Liste des articles récupérée:', articles.length); // Log du nombre d'articles récupérés
     res.status(200).json(articles);
   } catch (error) {
     console.error(error);
@@ -110,10 +102,8 @@ const deleteArticle = async (req, res) => {
     const { id } = req.params;
     const article = await Article.findByIdAndDelete(id);
     if (!article) {
-      console.log('Erreur: Article non trouvé'); // Log d'erreur
       return res.status(404).json({ message: 'Article non trouvé' });
     }
-    console.log('Article supprimé avec succès:', id); // Log de succès
     res.status(200).json({ message: 'Article supprimé avec succès' });
   } catch (error) {
     console.error(error);
@@ -129,28 +119,24 @@ const updateArticle = async (req, res) => {
 
     // Vérifiez si la fiche technique est présente
     if (!req.files['ficheTechnique']) {
-      console.log('Erreur: La fiche technique est requise'); // Log d'erreur
       return res.status(400).json({ message: 'La fiche technique est requise' });
     }
 
     // Si des fichiers sont envoyés, vérifiez leur validité avant de mettre à jour
     if (req.files['image']) {
       if (!['.jpg', '.jpeg', '.png'].includes(path.extname(req.files['image'][0].originalname))) {
-        console.log('Erreur: Format d\'image non valide'); // Log d'erreur
         return res.status(400).json({ message: 'Format d\'image non valide' });
       }
       updatedData.image = '/uploads/' + req.files['image'][0].filename;
     }
     if (req.files['video']) {
       if (!['.mp4', '.avi'].includes(path.extname(req.files['video'][0].originalname))) {
-        console.log('Erreur: Format de vidéo non valide'); // Log d'erreur
         return res.status(400).json({ message: 'Format de vidéo non valide' });
       }
       updatedData.video = '/uploads/' + req.files['video'][0].filename;
     }
     if (req.files['ficheTechnique']) {
       if (path.extname(req.files['ficheTechnique'][0].originalname) !== '.pdf') {
-        console.log('Erreur: La fiche technique doit être un fichier PDF'); // Log d'erreur
         return res.status(400).json({ message: 'La fiche technique doit être un fichier PDF' });
       }
       updatedData.ficheTechnique = '/uploads/' + req.files['ficheTechnique'][0].filename;
@@ -158,10 +144,8 @@ const updateArticle = async (req, res) => {
 
     const article = await Article.findByIdAndUpdate(id, updatedData, { new: true });
     if (!article) {
-      console.log('Erreur: Article non trouvé'); // Log d'erreur
       return res.status(404).json({ message: 'Article non trouvé' });
     }
-    console.log('Article mis à jour avec succès:', article); // Log de succès
     res.status(200).json({ message: 'Article mis à jour avec succès', article });
   } catch (error) {
     console.error(error);
@@ -188,4 +172,43 @@ const getArticle = async (req, res) => {
     res.status(500).json({ message: 'Erreur lors de la récupération de l\'article' });
   }
 };
-module.exports = { addArticle, listArticles, deleteArticle, updateArticle, upload, getArticle };
+
+// Recuperer les articles par categorie and subcategory
+
+
+
+
+const getArticlesByCategoryAndSubcategory = async (req, res) => {
+  try {
+    const { categoryId, subcategoryId } = req.params;
+
+    console.log(`Received categoryId: ${categoryId}, subcategoryId: ${subcategoryId}`);
+
+    // Convert IDs to ObjectId using the correct syntax
+    const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
+    const subcategoryObjectId = new mongoose.Types.ObjectId(subcategoryId);
+
+    // Query directly on `category` and `subcategory` fields
+    const articles = await Article.find({
+      category: categoryObjectId,
+      subcategory: subcategoryObjectId,
+    });
+
+    if (!articles || articles.length === 0) {
+      console.log('No articles found for the given category and subcategory IDs.');
+      return res.status(404).json({ message: 'No articles found.' });
+    }
+
+    console.log('Articles found:', articles);
+    res.status(200).json(articles);
+  } catch (error) {
+    console.error('Error retrieving articles:', error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+
+
+
+
+module.exports = { addArticle, listArticles, deleteArticle, updateArticle, upload, getArticle, getArticlesByCategoryAndSubcategory };
