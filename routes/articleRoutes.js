@@ -18,7 +18,7 @@ router.put('/article/:id', upload.fields([{ name: 'image' }, { name: 'video' }, 
 // Route pour récupérer un article par son ID
 router.get('/article/get/:id', getArticle );
 // Route for retrieving articles by category and subcategory
-router.get('/category/:categoryId/subcategory/:subcategoryId', getArticlesByCategoryAndSubcategory);
+router.get('/article/category/:categoryId/subcategory/:subcategoryId', getArticlesByCategoryAndSubcategory);
 
 
 module.exports = router;
