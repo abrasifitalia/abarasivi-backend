@@ -118,7 +118,7 @@ const updateArticle = async (req, res) => {
     const updatedData = req.body;
 
     // Vérifiez si la fiche technique est présente
-    if (!req.files['ficheTechnique']) {
+    if (req.files['ficheTechnique']) {
       return res.status(400).json({ message: 'La fiche technique est requise' });
     }
 
