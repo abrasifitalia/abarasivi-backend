@@ -117,11 +117,6 @@ const updateArticle = async (req, res) => {
     const { id } = req.params;
     const updatedData = req.body;
 
-    // Vérifiez si la fiche technique est présente
-    if (req.files['ficheTechnique']) {
-      return res.status(400).json({ message: 'La fiche technique est requise' });
-    }
-
     // Si des fichiers sont envoyés, vérifiez leur validité avant de mettre à jour
     if (req.files['image']) {
       if (!['.jpg', '.jpeg', '.png'].includes(path.extname(req.files['image'][0].originalname))) {

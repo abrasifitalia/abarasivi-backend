@@ -5,7 +5,7 @@ const router = express.Router();
 //const multer = require('multer');
 const { addArticle, listArticles, deleteArticle, updateArticle, upload, getArticle, getArticlesByCategoryAndSubcategory } = require('../controllers/articleController');
 
-   router.post('/article', upload.fields([{ name: 'image' }, { name: 'video' }, { name: 'ficheTechnique' }]),   addArticle);
+router.post('/article', upload.fields([{ name: 'image' }, { name: 'video' }, { name: 'ficheTechnique' }]),   addArticle);
   
 
 // Lister tous les articles
@@ -14,7 +14,7 @@ router.get('/article', listArticles);
 // Supprimer un article
 router.delete('/article/:id', deleteArticle);
 // Mettre à jour un article
-router.put('/article/:id', upload.fields([{ name: 'image' }, { name: 'video' }, { name: 'ficheTechnique' }]),  updateArticle); // Accessible via PUT /api/article/:id
+router.put('/article/:id', upload.fields([{ name: 'image' }, { name: 'video' }, { name: 'ficheTechnique' }]),  updateArticle); 
 // Route pour récupérer un article par son ID
 router.get('/article/get/:id', getArticle );
 // Route for retrieving articles by category and subcategory
