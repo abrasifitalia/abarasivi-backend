@@ -24,7 +24,7 @@ const sendContactMessageEmail = async (messageDetails) => {
 
   const mailOptionsSales = {
     from: `"Abrasif Italia" <${process.env.BREVO_SENDER_DEVIS}>`,
-    to: 'support@abrasifitalia.com',
+    to: 'abrasifitalia2@gmail.com',
     subject: `Nouveau Message de Contact - ${messageDetails.nom}`,
     html: contactMessageSalesTemplate(messageDetails),
   };
