@@ -1,5 +1,6 @@
 // controllers/messageController.js
 const Message = require('../models/Message');
+const sendContactMessageEmail = require('./Mailing/_contact_message'); // Import the email function
 
 // Ajouter un message
 const addMessage = async (req, res) => {
@@ -15,6 +16,13 @@ const addMessage = async (req, res) => {
         });
 
         await newMessage.save();
+
+        // Prepare message details for email
+        const messageDetails = { nom, email, message, phone, objet };
+
+        // Send emails
+        await sendContactMessageEmail(messageDetails);
+
         res.status(201).json({ message: 'Message added successfully', message: newMessage });
     } catch (error) {
         console.error('Error adding message:', error);
