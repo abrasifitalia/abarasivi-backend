@@ -48,7 +48,7 @@ const sendDemandeDevisEmail = async (orderDetails) => {
 
   const mailOptionsCompany = {
     from: `"Abrasif Italia" <${process.env.BREVO_SENDER_DEVIS}>`,
-    to: 'abrasifitalia2@gmail.com',
+    to: ['abrasifitalia2@gmail.com', 'soukra@abrasifitalia.com'],
     subject: `Nouvelle Demande de Devis - ${orderDetails.name}`,
     html: demandeDevisSalesTemplate(orderDetails), // Use sales team template
     attachments: [

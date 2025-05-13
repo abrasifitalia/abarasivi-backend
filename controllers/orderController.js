@@ -28,13 +28,14 @@ exports.createOrder = async (req, res) => {
     await newOrder.save();
 
     // Populate client and items details
-    await newOrder.populate('clientId', 'firstName lastName email');
-    await newOrder.populate('items.articleId', 'name image'); // Populate article details
+    await newOrder.populate('clientId', 'firstName lastName email phone'); // Added phone to population
+    await newOrder.populate('items.articleId', 'name image');
 
     // Préparer les détails pour l'email
     const orderDetails = {
       name: `${newOrder.clientId.firstName} ${newOrder.clientId.lastName}`,
       email: newOrder.clientId.email,
+      phone: newOrder.clientId.phone, // Added phone number
       product: newOrder.items.map(item => item.articleId?.name || 'Produit inconnu').join(', '),
       productImage: newOrder.items[0]?.articleId?.image || null, // Use the first item's image or null
       quantity: newOrder.items.reduce((total, item) => total + item.quantity, 0),
