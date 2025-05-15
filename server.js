@@ -41,23 +41,23 @@ const whitelist = [
 ];
 
 const corsOptions = {
-    origin: (origin, callback) => {
-        if (!origin || whitelist.includes(origin)) {
-            callback(null, true);
-        } else {
-            console.log('Blocked origin:', origin);
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept', 'X-Requested-With'],
-    exposedHeaders: ['Content-Range', 'X-Content-Range'],
-    credentials: true,
-    maxAge: 86400, // Cache preflight requests for 24 hours
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 };
 
 // Security middleware
-app.use(helmet()); // Add security headers
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "blob:"]
+        }
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false
+})); // Add security headers with correct static file access
 app.use(limiter); // Apply rate limiting
 app.use(cors(corsOptions));
 
@@ -68,6 +68,9 @@ app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' })); // Reduced from 50mb for security
 app.use(express.urlencoded({ limit: '10mb', extended: true })); // Reduced from 50mb
 app.use(morgan('dev')); // Request logging
+
+// Configure static file serving before routes
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
