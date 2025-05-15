@@ -37,31 +37,38 @@ const whitelist = [
     'https://www.abrasifitalia.com',
     'https://admin.abrasifitalia.com',
     'http://localhost:3000',
-    'http://localhost:3001',
+    'http://localhost:3001'
 ];
 
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, postman)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        if (whitelist.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    credentials: true,
+    maxAge: 86400 // 24 hours
 };
 
 // Security middleware
 app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "img-src": ["'self'", "data:", "blob:"]
-        }
-    },
+    contentSecurityPolicy: false, // Disable CSP for now
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false
 })); // Add security headers with correct static file access
 app.use(limiter); // Apply rate limiting
 app.use(cors(corsOptions));
 
-// Preflight requests
+// Enable pre-flight requests for all routes
 app.options('*', cors(corsOptions));
 
 // Middleware
