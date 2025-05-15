@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
-const jwt = require('jsonwebtoken'); // Pour générer le token
+const jwt = require('jsonwebtoken');
+const sendOnboardingEmail = require('./Mailing/_onboarding'); // Add this line
 
 // Inscription d'un client
 const registerClient = async (req, res) => {
@@ -22,6 +23,20 @@ const registerClient = async (req, res) => {
         });
 
         await client.save();
+
+        // Send onboarding email
+        try {
+            await sendOnboardingEmail({
+                email,
+                firstName,
+                lastName
+            });
+            console.log('Onboarding email sent successfully');
+        } catch (emailError) {
+            console.error('Error sending onboarding email:', emailError);
+            // Don't return error response here - registration was successful
+        }
+
         res.status(201).json({ message: 'Client enregistré avec succès !' });
     } catch (error) {
         console.error('Erreur lors de l\'inscription du client :', error);
