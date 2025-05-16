@@ -8,21 +8,39 @@ const bcrypt = require('bcrypt'); // Add this line
 
 // Inscription d'un client
 const registerClient = async (req, res) => {
-    const { firstName, lastName, email, password, phone } = req.body;
-
     try {
-        // Vérifier si un client existe déjà avec le même email
-        const existingClient = await Client.findOne({ email });
-        if (existingClient) {
-            return res.status(400).json({ message: 'Email déjà utilisé' });
+        const { firstName, lastName, email, password, phone } = req.body;
+
+        // Input validation
+        if (!firstName || !lastName || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Tous les champs sont requis'
+            });
         }
 
-        // Créer un nouveau client
+        // Debug log
+        console.log('Registration attempt:', { email, firstName, lastName });
+
+        // Check if email already exists
+        const existingClient = await Client.findOne({ email });
+        if (existingClient) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email déjà utilisé'
+            });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new client
         const client = new Client({
             firstName,
             lastName,
             email,
-            password,
+            password: hashedPassword,
             phone
         });
 
@@ -38,47 +56,89 @@ const registerClient = async (req, res) => {
             console.log('Onboarding email sent successfully');
         } catch (emailError) {
             console.error('Error sending onboarding email:', emailError);
-            // Don't return error response here - registration was successful
         }
 
-        res.status(201).json({ message: 'Client enregistré avec succès !' });
+        // Generate token for automatic login
+        const token = jwt.sign(
+            { _id: client._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Client enregistré avec succès !',
+            token,
+            clientId: client._id,
+            clientName: `${client.firstName} ${client.lastName}`
+        });
+
     } catch (error) {
-        console.error('Erreur lors de l\'inscription du client :', error);
-        res.status(500).json({ message: 'Erreur lors de l\'inscription' });
+        console.error('Registration error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de l\'inscription',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
 // Connexion du client
 const loginClient = async (req, res) => {
-    const { email, password } = req.body;
-
     try {
-        // Vérifier si le client existe
-        const client = await Client.findOne({ email });
-        if (!client) {
-            return res.status(400).json({ message: 'Client introuvable' });
+        const { email, password } = req.body;
+
+        // Add input validation
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email et mot de passe requis'
+            });
         }
 
-        // Vérifier le mot de passe
+        // Debug log
+        console.log('Login attempt for:', email);
+
+        // Fix: Use proper error handling for findOne
+        const client = await Client.findOne({ email });
+        
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Identifiants invalides'
+            });
+        }
+
+        // Verify password
         const isMatch = await client.isValidPassword(password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Mot de passe invalide' });
+            return res.status(400).json({
+                success: false,
+                message: 'Identifiants invalides'
+            });
         }
 
-        // Créer un token JWT
-        const token = jwt.sign({ _id: client._id }, process.env.JWT_SECRET, {
-            expiresIn: '1h'
-        });
+        // Generate token
+        const token = jwt.sign(
+            { _id: client._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
         res.status(200).json({
+            success: true,
             message: 'Connexion réussie',
-            token, 
+            token,
             clientId: client._id,
-            clientName: client.firstName + ' ' + client.lastName
+            clientName: `${client.firstName} ${client.lastName}`
         });
+
     } catch (error) {
-        console.error('Erreur lors de la connexion du client :', error);
-        res.status(500).json({ message: 'Erreur lors de la connexion' });
+        console.error('Login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la connexion'
+        });
     }
 };
 
