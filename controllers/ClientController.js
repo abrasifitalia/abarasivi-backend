@@ -93,20 +93,19 @@ const loginClient = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Add input validation
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email et mot de passe requis'
-            });
-        }
+        console.log('Login attempt:', { 
+            email,
+            passwordProvided: !!password
+        });
 
-        // Debug log
-        console.log('Login attempt for:', email);
-
-        // Fix: Use proper error handling for findOne
+        // Find client and log the result
         const client = await Client.findOne({ email });
-        
+        console.log('Client found:', {
+            found: !!client,
+            hasPassword: client ? !!client.password : false,
+            email: client ? client.email : null
+        });
+
         if (!client) {
             return res.status(400).json({
                 success: false,
@@ -114,8 +113,10 @@ const loginClient = async (req, res) => {
             });
         }
 
-        // Use bcrypt.compare for password verification
-        const isMatch = await bcrypt.compare(password, client.password);
+        // Password verification with logging
+        const isMatch = await client.isValidPassword(password);
+        console.log('Password verification result:', isMatch);
+
         if (!isMatch) {
             return res.status(400).json({
                 success: false,
@@ -142,7 +143,8 @@ const loginClient = async (req, res) => {
         console.error('Login error:', error);
         res.status(500).json({
             success: false,
-            message: 'Erreur lors de la connexion'
+            message: 'Erreur lors de la connexion',
+            debug: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

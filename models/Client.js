@@ -57,8 +57,16 @@ clientSchema.pre('save', async function (next) {
 // Vérifier le mot de passe
 clientSchema.methods.isValidPassword = async function (password) {
     try {
-        return await bcrypt.compare(password, this.password);
+        console.log('Password comparison:', {
+            providedPassword: password,
+            storedHashedPassword: this.password,
+            isModified: this.isModified('password')
+        });
+        const isValid = await bcrypt.compare(password, this.password);
+        console.log('Password validation result:', isValid);
+        return isValid;
     } catch (error) {
+        console.error('Password validation error:', error);
         throw error;
     }
 };
