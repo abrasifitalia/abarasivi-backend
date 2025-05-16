@@ -1,6 +1,9 @@
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
 const sendOnboardingEmail = require('./Mailing/_onboarding'); // Add this line
+const crypto = require('crypto');
+const mailService = require('./Mailing/_mailmiddleware');
+const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
 
 // Inscription d'un client
 const registerClient = async (req, res) => {
@@ -127,10 +130,87 @@ const deleteClient = async (req, res) => {
       console.error('Erreur lors de la suppression:', error);
       res.status(500).json({ message: 'Erreur serveur lors de la suppression du client', error: error.message });
     }
-  };
-  
+};
 
+// Request password reset
+const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const client = await Client.findOne({ email });
 
+        if (!client) {
+            return res.status(404).json({ message: 'Client non trouvé' });
+        }
 
+        // Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-module.exports = { registerClient, loginClient, getClientInfo, getAllClients, deleteClient };
+        // Save verification code
+        client.verificationCode = verificationCode;
+        client.verificationCodeExpires = verificationCodeExpires;
+        await client.save();
+
+        // Send email with verification code
+        await mailService.sendMail({
+            to: email,
+            subject: 'Code de réinitialisation de mot de passe',
+            html: resetPasswordTemplate({
+                firstName: client.firstName,
+                verificationCode
+            })
+        });
+
+        res.status(200).json({ 
+            message: 'Code de vérification envoyé par email',
+            email: client.email
+        });
+    } catch (error) {
+        console.error('Error in requestPasswordReset:', error);
+        res.status(500).json({ message: 'Erreur lors de la demande de réinitialisation' });
+    }
+};
+
+// Verify code and reset password
+const resetPassword = async (req, res) => {
+    try {
+        const { email, verificationCode, newPassword } = req.body;
+
+        const client = await Client.findOne({
+            email,
+            verificationCode,
+            verificationCodeExpires: { $gt: Date.now() }
+        });
+
+        if (!client) {
+            return res.status(400).json({ 
+                message: 'Code de vérification invalide ou expiré' 
+            });
+        }
+
+        // Update password
+        client.password = newPassword;
+        client.verificationCode = null;
+        client.verificationCodeExpires = null;
+        await client.save();
+
+        res.status(200).json({ 
+            message: 'Mot de passe réinitialisé avec succès' 
+        });
+    } catch (error) {
+        console.error('Error in resetPassword:', error);
+        res.status(500).json({ 
+            message: 'Erreur lors de la réinitialisation du mot de passe' 
+        });
+    }
+};
+
+module.exports = { 
+    registerClient, 
+    loginClient, 
+    getClientInfo, 
+    getAllClients, 
+    deleteClient,
+    requestPasswordReset,
+    resetPassword
+};

@@ -15,5 +15,8 @@ router.get('/client/list', getAllClients);
 // Supprimer un client par son ID
 router.delete('/client/:id', deleteClient);
 
+// Password reset routes
+router.post('/client/request-reset', requestPasswordReset);
+router.post('/client/reset-password', resetPassword);
 
 module.exports = router;
