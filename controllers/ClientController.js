@@ -4,6 +4,7 @@ const sendOnboardingEmail = require('./Mailing/_onboarding'); // Add this line
 const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
+const bcrypt = require('bcrypt'); // Add this line
 
 // Inscription d'un client
 const registerClient = async (req, res) => {
@@ -175,32 +176,56 @@ const requestPasswordReset = async (req, res) => {
 const resetPassword = async (req, res) => {
     try {
         const { email, verificationCode, newPassword } = req.body;
+        
+        // Log incoming request data (remove in production)
+        console.log('Reset attempt:', {
+            email,
+            code: verificationCode,
+            timestamp: new Date()
+        });
 
+        // Find client with active verification code
         const client = await Client.findOne({
             email,
             verificationCode,
             verificationCodeExpires: { $gt: Date.now() }
         });
 
+        // Log verification check results (remove in production)
+        console.log('Client found:', {
+            found: !!client,
+            codeMatch: client?.verificationCode === verificationCode,
+            codeExpired: client?.verificationCodeExpires < Date.now()
+        });
+
         if (!client) {
             return res.status(400).json({ 
-                message: 'Code de vérification invalide ou expiré' 
+                message: 'Code de vérification invalide ou expiré',
+                details: 'Veuillez demander un nouveau code'
             });
         }
 
-        // Update password
-        client.password = newPassword;
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update client password and clear verification code
+        client.password = hashedPassword;
         client.verificationCode = null;
         client.verificationCodeExpires = null;
+        
         await client.save();
 
         res.status(200).json({ 
+            success: true,
             message: 'Mot de passe réinitialisé avec succès' 
         });
     } catch (error) {
-        console.error('Error in resetPassword:', error);
+        console.error('Password reset error:', error);
         res.status(500).json({ 
-            message: 'Erreur lors de la réinitialisation du mot de passe' 
+            success: false,
+            message: 'Erreur lors de la réinitialisation du mot de passe',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };

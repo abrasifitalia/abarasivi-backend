@@ -6,24 +6,19 @@ const {
     getClientInfo, 
     getAllClients, 
     deleteClient,
-    requestPasswordReset, // Add these new functions
-    resetPassword        // to the destructured import
+    requestPasswordReset,
+    resetPassword
 } = require('../controllers/ClientController');
-const auth = require('../middlewares/auth'); // Pour vérifier le token JWT
+const auth = require('../middlewares/auth');
 
-// Route d'inscription du client
+// Client routes
 router.post('/client/register', registerClient);
-
-// Route de connexion du client
 router.post('/client/login', loginClient);
-
-// Route pour obtenir les informations du client
 router.get('/client/me', auth, getClientInfo);
 router.get('/client/list', getAllClients);
-// Supprimer un client par son ID
 router.delete('/client/:id', deleteClient);
 
-// Password reset routes
+// Password reset routes with proper prefixes
 router.post('/client/request-reset', requestPasswordReset);
 router.post('/client/reset-password', resetPassword);
 
