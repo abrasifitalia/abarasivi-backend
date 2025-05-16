@@ -4,9 +4,9 @@ const sendOnboardingEmail = require('./Mailing/_onboarding'); // Add this line
 const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
-const bcrypt = require('bcrypt'); // Add this line
+const bcrypt = require('bcryptjs'); // Change to bcryptjs
 
-// Add a utility function for password hashing at the top of the file
+// Update the hashPassword utility
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
@@ -95,17 +95,11 @@ const loginClient = async (req, res) => {
 
         console.log('Login attempt:', { 
             email,
-            passwordProvided: !!password
+            passwordLength: password?.length
         });
 
-        // Find client and log the result
         const client = await Client.findOne({ email });
-        console.log('Client found:', {
-            found: !!client,
-            hasPassword: client ? !!client.password : false,
-            email: client ? client.email : null
-        });
-
+        
         if (!client) {
             return res.status(400).json({
                 success: false,
@@ -113,11 +107,11 @@ const loginClient = async (req, res) => {
             });
         }
 
-        // Password verification with logging
-        const isMatch = await client.isValidPassword(password);
-        console.log('Password verification result:', isMatch);
+        // Use the model's isValidPassword method
+        const isValid = await client.isValidPassword(password);
+        console.log('Password validation completed:', isValid);
 
-        if (!isMatch) {
+        if (!isValid) {
             return res.status(400).json({
                 success: false,
                 message: 'Identifiants invalides'
@@ -143,8 +137,7 @@ const loginClient = async (req, res) => {
         console.error('Login error:', error);
         res.status(500).json({
             success: false,
-            message: 'Erreur lors de la connexion',
-            debug: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Erreur lors de la connexion'
         });
     }
 };

@@ -49,7 +49,8 @@ const clientSchema = new mongoose.Schema({
 // Hacher le mot de passe avant de sauvegarder
 clientSchema.pre('save', async function (next) {
     if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 10);
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
     }
     next();
 });
@@ -57,13 +58,14 @@ clientSchema.pre('save', async function (next) {
 // Vérifier le mot de passe
 clientSchema.methods.isValidPassword = async function (password) {
     try {
-        console.log('Password comparison:', {
-            providedPassword: password,
-            storedHashedPassword: this.password,
-            isModified: this.isModified('password')
+        console.log('Comparing passwords:', {
+            plainPassword: password.substring(0, 3) + '...', // Log only first 3 chars for security
+            hashedLength: this.password.length
         });
+        
         const isValid = await bcrypt.compare(password, this.password);
-        console.log('Password validation result:', isValid);
+        console.log('Comparison result:', isValid);
+        
         return isValid;
     } catch (error) {
         console.error('Password validation error:', error);
