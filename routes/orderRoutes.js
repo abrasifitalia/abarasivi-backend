@@ -9,18 +9,18 @@ const {
 } = require('../controllers/orderController');
 
 // Ajouter une commande
-router.post('/order', createOrder);
+router.post('/create_order', createOrder);
 
 // Lister toutes les commandes (Admin)
-router.get('/order', listOrders);
+router.get('/all_order', listOrders);
 
 // Obtenir une liste spécifique de commandes
-router.get('/order/getOrders', getOrders);
+router.get('/some_order/getOrders', getOrders);
 
 // Mettre à jour le statut d'une commande
-router.put('/order/:orderId', updateOrderStatus);
+router.put('/update_order/:orderId', updateOrderStatus);
 
 // Supprimer une commande
-router.delete('/order/:orderId', deleteOrder);
+router.delete('/delete_order/:orderId', deleteOrder);
 
 module.exports = router;

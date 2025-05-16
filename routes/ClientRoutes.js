@@ -12,14 +12,14 @@ const {
 const auth = require('../middlewares/auth');
 
 // Client routes
-router.post('/client/register', registerClient);
-router.post('/client/login', loginClient);
-router.get('/client/me', auth, getClientInfo);
-router.get('/client/list', getAllClients);
-router.delete('/client/:id', deleteClient);
+router.post('/register', registerClient);
+router.post('/login', loginClient);
+router.get('/me', auth, getClientInfo);
+router.get('/list', getAllClients);
+router.delete('/delete_client/:id', deleteClient);
 
 // Password reset routes with proper prefixes
-router.post('/client/request-reset', requestPasswordReset);
-router.post('/client/reset-password', resetPassword);
+router.post('/request-reset', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

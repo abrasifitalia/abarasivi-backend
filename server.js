@@ -96,7 +96,7 @@ app.use('/api/message', messageRoutes);
 app.use('/api/view', viewRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api', dashboardRoutes);
-app.use('/api', clientRoutes); // Changed from '/api/client' to '/api'
+app.use('/api/clients', clientRoutes); // Changed from '/api/client' to '/api'
 app.use('/api/quote', quoteRoutes); // Add quote routes
 
 // Logging middleware
