@@ -11,14 +11,12 @@ const {
 } = require('../controllers/ClientController');
 const auth = require('../middlewares/auth');
 
-// Client routes
+// Routes without client prefix (now handled by server.js)
 router.post('/register', registerClient);
 router.post('/login', loginClient);
 router.get('/me', auth, getClientInfo);
 router.get('/list', getAllClients);
-router.delete('/delete_client/:id', deleteClient);
-
-// Password reset routes with proper prefixes
+router.delete('/:id', deleteClient);
 router.post('/request-reset', requestPasswordReset);
 router.post('/reset-password', resetPassword);
 

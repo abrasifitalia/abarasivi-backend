@@ -96,8 +96,8 @@ app.use('/api/message', messageRoutes);
 app.use('/api/view', viewRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api', dashboardRoutes);
-app.use('/api/clients', clientRoutes); // Changed from '/api/client' to '/api'
-app.use('/api/quote', quoteRoutes); // Add quote routes
+app.use('/api/client', clientRoutes); // Changed to use /client prefix
+app.use('/api/quote', quoteRoutes);
 
 // Logging middleware
 app.use((req, res, next) => {
