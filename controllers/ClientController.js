@@ -175,31 +175,46 @@ const requestPasswordReset = async (req, res) => {
 // Verify code and reset password
 const resetPassword = async (req, res) => {
     try {
-        const { email, verificationCode, newPassword } = req.body;
+        const { email, code, verificationCode, password, newPassword } = req.body;
         
+        // Support both code and verificationCode parameters
+        const actualCode = code || verificationCode;
+        const actualPassword = password || newPassword;
+
+        // Input validation
+        if (!email || !actualCode || !actualPassword) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Email, code de vérification et nouveau mot de passe sont requis'
+            });
+        }
+
         // Log incoming request data (remove in production)
         console.log('Reset attempt:', {
             email,
-            code: verificationCode,
+            code: actualCode,
             timestamp: new Date()
         });
 
         // Find client with active verification code
         const client = await Client.findOne({
             email,
-            verificationCode,
+            verificationCode: actualCode,
             verificationCodeExpires: { $gt: Date.now() }
         });
 
-        // Log verification check results (remove in production)
+        // Debug logging
         console.log('Client found:', {
             found: !!client,
-            codeMatch: client?.verificationCode === verificationCode,
-            codeExpired: client?.verificationCodeExpires < Date.now()
+            codeMatch: client?.verificationCode === actualCode,
+            codeExpired: client?.verificationCodeExpires < Date.now(),
+            requestCode: actualCode,
+            storedCode: client?.verificationCode
         });
 
         if (!client) {
             return res.status(400).json({ 
+                success: false,
                 message: 'Code de vérification invalide ou expiré',
                 details: 'Veuillez demander un nouveau code'
             });
@@ -207,7 +222,7 @@ const resetPassword = async (req, res) => {
 
         // Hash new password
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        const hashedPassword = await bcrypt.hash(actualPassword, salt);
 
         // Update client password and clear verification code
         client.password = hashedPassword;
