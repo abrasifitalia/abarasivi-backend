@@ -13,12 +13,24 @@ class MailService {
         pass: process.env.BREVO_PWD,
       },
     });
+
+    // Define email senders for different cases
+    this.senders = {
+      devis: process.env.BREVO_SENDER_DEVIS,
+      auth: process.env.BREVO_SENDER_AUTH,
+      contact: process.env.BREVO_SENDER_CONTACT,
+      support: process.env.BREVO_SENDER_SUPPORT,
+      default: process.env.BREVO_SENDER_DEFAULT
+    };
   }
 
   async sendMail(options) {
     try {
+      // Determine the appropriate sender based on email type
+      const sender = this.senders[options.type] || this.senders.default;
+      
       const mailOptions = {
-        from: `"Abrasif Italia" <${process.env.BREVO_SENDER_DEVIS}>`,
+        from: `"Abrasif Italia" <${sender}>`,
         ...options,
         attachments: [
           {
@@ -38,6 +50,9 @@ class MailService {
           ...(options.attachments || []),
         ],
       };
+
+      // Log email attempt (remove in production)
+      console.log(`Sending ${options.type || 'default'} email from: ${sender}`);
 
       await this.transporter.sendMail(mailOptions);
       console.log(`Email sent successfully to ${options.to}`);

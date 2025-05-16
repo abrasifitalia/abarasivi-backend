@@ -8,35 +8,22 @@ const sendOnboardingEmail = async (clientDetails) => {
       throw new Error('Email is required for sending onboarding email');
     }
 
-    // Fetch featured products (limit to 3 products)
+    // Fetch featured products
     const featuredProducts = await Article.find()
       .select('name image description')
       .limit(3);
 
     await mailService.sendMail({
+      type: 'auth',
       to: clientDetails.email,
       subject: 'Bienvenue chez Abrasif Italia',
       html: onboardingTemplate({
         ...clientDetails,
         featuredProducts
       }),
-      attachments: [
-        // Include logo attachment as before
-        {
-          filename: 'logo.png',
-          path: 'public/assets/logo.png',
-          cid: 'logo'
-        },
-        // Add product images
-        ...featuredProducts.map((product, index) => ({
-          filename: `product-${index}.png`,
-          path: `public${product.image}`,
-          cid: `product-${index}`
-        }))
-      ]
+      productImage: featuredProducts[0]?.image
     });
 
-    console.log(`Onboarding email sent successfully to ${clientDetails.email}`);
     return true;
   } catch (error) {
     console.error('Error sending onboarding email:', error);

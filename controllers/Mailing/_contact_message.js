@@ -6,13 +6,15 @@ const sendContactMessageEmail = async (messageDetails) => {
   try {
     // Send to client
     await mailService.sendMail({
+      type: 'contact',
       to: messageDetails.email,
-      subject: 'Confirmation de votre message',
+      subject: 'Nous avons reçu votre message',
       html: contactMessageClientTemplate(messageDetails)
     });
 
-    // Send to sales team
+    // Send to admin
     await mailService.sendMail({
+      type: 'contact',
       to: ['abrasifitalia2@gmail.com', 'soukra@abrasifitalia.com'],
       subject: `Nouveau Message de Contact - ${messageDetails.nom}`,
       html: contactMessageSalesTemplate(messageDetails)

@@ -154,6 +154,7 @@ const requestPasswordReset = async (req, res) => {
 
         // Send email with verification code
         await mailService.sendMail({
+            type: 'auth',
             to: email,
             subject: 'Code de réinitialisation de mot de passe',
             html: resetPasswordTemplate({
