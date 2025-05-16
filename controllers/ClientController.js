@@ -1,10 +1,10 @@
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
-const sendOnboardingEmail = require('./Mailing/_onboarding'); // Add this line
+const sendOnboardingEmail = require('./Mailing/_onboarding');
 const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
-const bcrypt = require('bcryptjs'); // Change to bcryptjs
+const bcrypt = require('bcryptjs');
 
 // Update the hashPassword utility
 const hashPassword = async (password) => {
@@ -37,15 +37,12 @@ const registerClient = async (req, res) => {
             });
         }
 
-        // Hash password
-        const hashedPassword = await hashPassword(password);
-
-        // Create new client
+        // Create new client - password will be hashed by the pre-save hook in the model
         const client = new Client({
             firstName,
             lastName,
             email,
-            password: hashedPassword,
+            password, // Do not hash here, let the model's pre-save middleware handle it
             phone
         });
 
@@ -100,17 +97,21 @@ const loginClient = async (req, res) => {
             });
         }
 
+        // Debug log
+        console.log('Login attempt for:', email);
+
         // Find client
         const client = await Client.findOne({ email }).select('+password');
 
         if (!client) {
+            console.log('Client not found:', email);
             return res.status(400).json({
                 success: false,
                 message: 'Identifiants invalides'
             });
         }
 
-        // Validate password
+        // Validate password using the model method
         const isValid = await client.isValidPassword(password);
 
         if (!isValid) {
@@ -120,6 +121,8 @@ const loginClient = async (req, res) => {
                 message: 'Identifiants invalides'
             });
         }
+
+        console.log('Login successful for:', email);
 
         // Generate token on success
         const token = jwt.sign(
@@ -148,7 +151,7 @@ const loginClient = async (req, res) => {
 // Obtenir les informations d'un client
 const getClientInfo = async (req, res) => {
     try {
-        const client = await Client.findById(req.clientId).select('-password'); // Exclure le mot de passe
+        const client = await Client.findById(req.clientId).select('-password');
         if (!client) {
             return res.status(404).json({ message: 'Client non trouvé' });
         }
@@ -158,10 +161,10 @@ const getClientInfo = async (req, res) => {
         res.status(500).json({ message: 'Erreur lors de la récupération des informations' });
     }
 };
+
 // Obtenir la liste de tous les clients
 const getAllClients = async (req, res) => {
     try {
-        // Récupérer tous les clients et exclure le mot de passe
         const clients = await Client.find().select('-password');
 
         if (!clients || clients.length === 0) {
@@ -178,21 +181,22 @@ const getAllClients = async (req, res) => {
 // Supprimer un client
 const deleteClient = async (req, res) => {
     try {
-      const { id } = req.params;
-      console.log('Tentative de suppression du client avec l\'ID:', id);
+        const { id } = req.params;
+        console.log('Tentative de suppression du client avec l\'ID:', id);
   
-      const client = await Client.findById(id);
-      if (!client) {
-        console.log('Client non trouvé');
-        return res.status(404).json({ message: 'Client non trouvé' });
-      }
+        const client = await Client.findById(id);
+        if (!client) {
+            console.log('Client non trouvé');
+            return res.status(404).json({ message: 'Client non trouvé' });
+        }
   
-      await client.remove();
-      console.log('Client supprimé avec succès');
-      res.status(200).json({ message: 'Client supprimé avec succès' });
+        // Use deleteOne() instead of remove() which is deprecated
+        await Client.deleteOne({ _id: id });
+        console.log('Client supprimé avec succès');
+        res.status(200).json({ message: 'Client supprimé avec succès' });
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      res.status(500).json({ message: 'Erreur serveur lors de la suppression du client', error: error.message });
+        console.error('Erreur lors de la suppression:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la suppression du client', error: error.message });
     }
 };
 
@@ -271,7 +275,7 @@ const resetPassword = async (req, res) => {
         console.log('Client found:', {
             found: !!client,
             codeMatch: client?.verificationCode === actualCode,
-            codeExpired: client?.verificationCodeExpires < Date.now(),
+            codeExpired: client ? client.verificationCodeExpires < Date.now() : null,
             requestCode: actualCode,
             storedCode: client?.verificationCode
         });
@@ -284,11 +288,8 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Hash new password before saving
-        const hashedPassword = await hashPassword(actualPassword);
-
-        // Update client password and clear verification code
-        client.password = hashedPassword;
+        // Update client password (don't hash manually - let the pre-save hook handle it)
+        client.password = actualPassword; 
         client.verificationCode = null;
         client.verificationCodeExpires = null;
         
