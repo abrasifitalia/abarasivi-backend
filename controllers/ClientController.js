@@ -6,6 +6,12 @@ const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
 const bcrypt = require('bcrypt'); // Add this line
 
+// Add a utility function for password hashing at the top of the file
+const hashPassword = async (password) => {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+};
+
 // Inscription d'un client
 const registerClient = async (req, res) => {
     try {
@@ -32,8 +38,7 @@ const registerClient = async (req, res) => {
         }
 
         // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await hashPassword(password);
 
         // Create new client
         const client = new Client({
@@ -109,8 +114,8 @@ const loginClient = async (req, res) => {
             });
         }
 
-        // Verify password
-        const isMatch = await client.isValidPassword(password);
+        // Use bcrypt.compare for password verification
+        const isMatch = await bcrypt.compare(password, client.password);
         if (!isMatch) {
             return res.status(400).json({
                 success: false,
@@ -281,9 +286,8 @@ const resetPassword = async (req, res) => {
             });
         }
 
-        // Hash new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(actualPassword, salt);
+        // Hash new password before saving
+        const hashedPassword = await hashPassword(actualPassword);
 
         // Update client password and clear verification code
         client.password = hashedPassword;

@@ -56,7 +56,11 @@ clientSchema.pre('save', async function (next) {
 
 // Vérifier le mot de passe
 clientSchema.methods.isValidPassword = async function (password) {
-    return bcrypt.compare(password, this.password);
+    try {
+        return await bcrypt.compare(password, this.password);
+    } catch (error) {
+        throw error;
+    }
 };
 
 // Créer le modèle
