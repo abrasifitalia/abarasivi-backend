@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { registerClient, loginClient, getClientInfo, getAllClients, deleteClient} = require('../controllers/ClientController');
+const { 
+    registerClient, 
+    loginClient, 
+    getClientInfo, 
+    getAllClients, 
+    deleteClient,
+    requestPasswordReset, // Add these new functions
+    resetPassword        // to the destructured import
+} = require('../controllers/ClientController');
 const auth = require('../middlewares/auth'); // Pour vérifier le token JWT
 
 // Route d'inscription du client
