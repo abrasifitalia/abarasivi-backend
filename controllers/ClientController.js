@@ -93,13 +93,16 @@ const loginClient = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        console.log('Login attempt:', { 
-            email,
-            passwordLength: password?.length
-        });
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email et mot de passe requis'
+            });
+        }
 
-        const client = await Client.findOne({ email });
-        
+        // Find client
+        const client = await Client.findOne({ email }).select('+password');
+
         if (!client) {
             return res.status(400).json({
                 success: false,
@@ -107,18 +110,18 @@ const loginClient = async (req, res) => {
             });
         }
 
-        // Use the model's isValidPassword method
+        // Validate password
         const isValid = await client.isValidPassword(password);
-        console.log('Password validation completed:', isValid);
 
         if (!isValid) {
+            console.log('Invalid password for user:', email);
             return res.status(400).json({
                 success: false,
                 message: 'Identifiants invalides'
             });
         }
 
-        // Generate token
+        // Generate token on success
         const token = jwt.sign(
             { _id: client._id },
             process.env.JWT_SECRET,

@@ -46,30 +46,42 @@ const clientSchema = new mongoose.Schema({
     }
 });
 
-// Hacher le mot de passe avant de sauvegarder
-clientSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
+// Pre-save middleware to hash passwords
+clientSchema.pre('save', async function(next) {
+    // Only hash if password is modified
+    if (!this.isModified('password')) return next();
+    
+    try {
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error);
     }
-    next();
 });
 
-// Vérifier le mot de passe
-clientSchema.methods.isValidPassword = async function (password) {
+// Password validation method
+clientSchema.methods.isValidPassword = async function(password) {
     try {
-        console.log('Comparing passwords:', {
-            plainPassword: password.substring(0, 3) + '...', // Log only first 3 chars for security
-            hashedLength: this.password.length
+        // Debug logging
+        console.log('Password validation attempt:', {
+            hashedPasswordLength: this.password?.length || 0,
+            attemptedPasswordLength: password?.length || 0
         });
-        
+
+        // Use bcrypt.compare directly
         const isValid = await bcrypt.compare(password, this.password);
-        console.log('Comparison result:', isValid);
         
+        // Debug result
+        console.log('Password validation result:', {
+            isValid,
+            timestamp: new Date().toISOString()
+        });
+
         return isValid;
     } catch (error) {
         console.error('Password validation error:', error);
-        throw error;
+        return false;
     }
 };
 
