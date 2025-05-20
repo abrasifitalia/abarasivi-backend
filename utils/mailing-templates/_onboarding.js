@@ -46,7 +46,7 @@ module.exports = (data) => `
 </head>
 <body>
   <div class="container">
-    <div class="header">
+    <div class="header green">
       <img src="cid:logo" alt="Abrasif Italia" class="logo" />
       <h1>Bienvenue chez Abrasif Italia</h1>
     </div>
@@ -64,13 +64,21 @@ module.exports = (data) => `
           <li>Contacter notre équipe commerciale</li>
         </ul>
       </div>
+
+      <div class="info-section">
+        <p>Notre équipe est à votre disposition pour toute question ou assistance.</p>
+      </div>
     </div>
 
     <div class="footer">
-      <p>Abrasif Italia</p>
+      <p style="font-weight: 500;">Abrasif Italia</p>
       <p>Email: support@abrasifitalia.com</p>
       <p>Tél: +216 28182762</p>
-      <p>&copy; ${new Date().getFullYear()} Abrasif Italia. Tous droits réservés.</p>
+      <div class="social-links">
+        <a href="https://www.facebook.com/profile.php?id=100057219229918">Facebook</a> |
+        <a href="https://www.instagram.com/abrasif_italia_hg/">Instagram</a>
+      </div>
+      <p>&copy; ${new Date().getFullYear()} Abrasif Italia</p>
     </div>
   </div>
 </body>

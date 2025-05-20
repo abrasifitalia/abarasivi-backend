@@ -1,11 +1,9 @@
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
-const sendOnboardingEmail = require('../utils/mailing-templates/_onboarding');
-const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
-const bcrypt = require('bcryptjs');
 const verificationEmailTemplate = require('../utils/mailing-templates/_email_verification');
+const onboardingTemplate = require('../utils/mailing-templates/_onboarding'); // Add this import
 
 // Update the hashPassword utility
 const hashPassword = async (password) => {
@@ -54,7 +52,7 @@ const registerClient = async (req, res) => {
         // Send both onboarding and verification emails
         try {
             // Send onboarding email
-            await mailService.sendMail({
+            const onboardingSent = await mailService.sendMail({
                 type: 'auth',
                 to: email,
                 subject: 'Bienvenue chez Abrasif Italia',
@@ -64,8 +62,12 @@ const registerClient = async (req, res) => {
                 })
             });
 
+            if (!onboardingSent) {
+                console.error('Failed to send onboarding email');
+            }
+
             // Send verification email
-            await mailService.sendMail({
+            const verificationSent = await mailService.sendMail({
                 type: 'auth',
                 to: email,
                 subject: 'Vérification de votre compte',
@@ -75,10 +77,14 @@ const registerClient = async (req, res) => {
                 })
             });
 
-            console.log('All registration emails sent successfully');
+            if (!verificationSent) {
+                console.error('Failed to send verification email');
+            }
+
+            console.log('Email status:', { onboardingSent, verificationSent });
         } catch (emailError) {
             console.error('Error sending registration emails:', emailError);
-            // Don't fail registration if email sending fails
+            // Continue with registration even if emails fail
         }
 
         // Success response
