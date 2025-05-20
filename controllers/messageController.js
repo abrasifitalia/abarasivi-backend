@@ -1,6 +1,31 @@
-// controllers/messageController.js
+const mailService = require('./Mailing/_mailmiddleware');
 const Message = require('../models/Message');
 const sendContactMessageEmail = require('./Mailing/_contact_message'); // Import the email function
+
+const sendContactEmail = async (messageDetails) => {
+    try {
+        // Send to client
+        await mailService.sendMail({
+            type: 'contact',
+            to: messageDetails.email,
+            subject: 'Nous avons reçu votre message',
+            html: contactClientTemplate(messageDetails)
+        });
+
+        // Send to admin
+        await mailService.sendMail({
+            type: 'contact',
+            to: process.env.ADMIN_EMAIL,
+            subject: `Nouveau message de contact - ${messageDetails.name}`,
+            html: contactAdminTemplate(messageDetails)
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error sending contact emails:', error);
+        return false;
+    }
+};
 
 // Ajouter un message
 const addMessage = async (req, res) => {

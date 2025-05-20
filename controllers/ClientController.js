@@ -40,7 +40,7 @@ const registerClient = async (req, res) => {
         const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         // Create new client
-        const client = new Client({
+        const client = await new Client({
             firstName,
             lastName,
             email,
@@ -49,34 +49,35 @@ const registerClient = async (req, res) => {
             emailVerificationCode: verificationCode,
             emailVerificationExpires: verificationExpires,
             isEmailVerified: false // Explicitly set verification status
-        });
-
-        await client.save();
+        }).save();
 
         // Send both onboarding and verification emails
         try {
-            // Send onboarding email first
-            const onboardingResult = await sendOnboardingEmail({
-                email,
-                firstName,
-                lastName
+            // Send onboarding email
+            await mailService.sendMail({
+                type: 'auth',
+                to: email,
+                subject: 'Bienvenue chez Abrasif Italia',
+                html: sendOnboardingEmail({
+                    firstName,
+                    lastName
+                })
             });
-            console.log('Onboarding email status:', onboardingResult);
 
             // Send verification email
             await mailService.sendMail({
                 type: 'auth',
                 to: email,
-                subject: 'Vérification de votre compte Abrasif Italia',
+                subject: 'Vérification de votre compte',
                 html: verificationEmailTemplate({
                     firstName,
                     verificationCode
                 })
             });
 
-            console.log('All emails sent successfully');
+            console.log('All registration emails sent successfully');
         } catch (emailError) {
-            console.error('Error sending emails:', emailError);
+            console.error('Error sending registration emails:', emailError);
             // Don't fail registration if email sending fails
         }
 
@@ -251,16 +252,23 @@ const requestPasswordReset = async (req, res) => {
         client.verificationCodeExpires = verificationCodeExpires;
         await client.save();
 
-        // Send email with verification code
-        await mailService.sendMail({
+        // Send reset password email
+        const emailSent = await mailService.sendMail({
             type: 'auth',
             to: email,
-            subject: 'Code de réinitialisation de mot de passe',
+            subject: 'Réinitialisation de votre mot de passe',
             html: resetPasswordTemplate({
                 firstName: client.firstName,
                 verificationCode
             })
         });
+
+        if (!emailSent) {
+            return res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'envoi de l\'email'
+            });
+        }
 
         res.status(200).json({ 
             message: 'Code de vérification envoyé par email',
@@ -416,20 +424,26 @@ const resendVerificationCode = async (req, res) => {
         await client.save();
 
         // Send new verification email
-        await mailService.sendMail({
+        const emailSent = await mailService.sendMail({
             type: 'auth',
             to: email,
-            subject: 'Nouveau code de vérification - Abrasif Italia',
+            subject: 'Nouveau code de vérification',
             html: verificationEmailTemplate({
                 firstName: client.firstName,
                 verificationCode
             })
         });
 
+        if (!emailSent) {
+            return res.status(500).json({
+                success: false,
+                message: 'Erreur lors de l\'envoi du code'
+            });
+        }
+
         res.status(200).json({
             success: true,
-            message: 'Nouveau code de vérification envoyé',
-            email
+            message: 'Nouveau code de vérification envoyé'
         });
 
     } catch (error) {
