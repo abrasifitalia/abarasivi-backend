@@ -46,53 +46,30 @@ module.exports = (data) => `
 </head>
 <body>
   <div class="container">
-    <div class="header green">
+    <div class="header">
       <img src="cid:logo" alt="Abrasif Italia" class="logo" />
-      <h1>Bienvenue chez Abrasif Italia!</h1>
+      <h1>Bienvenue chez Abrasif Italia</h1>
     </div>
     
     <div class="content">
+      <h2>Bonjour ${data.firstName},</h2>
+      <p>Nous sommes ravis de vous accueillir chez Abrasif Italia !</p>
+      
       <div class="welcome-section">
-        <h2 style="color: var(--primary-green);">Bonjour ${data.firstName} ${data.lastName},</h2>
-        <p>Nous sommes ravis de vous compter parmi nos clients.</p>
-      </div>
-
-      <div class="details">
-        <h3>Votre compte a été créé avec succès!</h3>
-        <p>Découvrez notre sélection de produits populaires:</p>
-      </div>
-
-      <div class="product-grid">
-        ${data.featuredProducts.map((product, index) => `
-          <div class="product-card">
-            <img src="cid:product-${index}" alt="${product.name}" class="product-image">
-            <h4 class="product-name">${product.name}</h4>
-            <p class="product-description">${product.description.substring(0, 100)}...</p>
-          </div>
-        `).join('')}
-      </div>
-
-      <div style="text-align: center; margin: 2rem 0;">
-        <a href="https://abrasifitalia.com/articles" class="cta-button">
-          Voir Notre Catalogue Complet
-        </a>
-      </div>
-
-      <div class="next-steps">
-        <h3 style="color: var(--primary-green);">Besoin d'aide?</h3>
-        <p>Notre équipe est à votre disposition pour toute question:</p>
-        <div class="contact-info">
-          <p>✉️ support@abrasifitalia.com</p>
-          <p>📞 +216 20235829</p>
-        </div>
+        <p>Votre compte a été créé avec succès. Vous pouvez maintenant :</p>
+        <ul>
+          <li>Explorer notre catalogue de produits</li>
+          <li>Demander des devis personnalisés</li>
+          <li>Suivre vos commandes</li>
+          <li>Contacter notre équipe commerciale</li>
+        </ul>
       </div>
     </div>
 
     <div class="footer">
-      <div class="social-links">
-        <a href="https://www.facebook.com/profile.php?id=100057219229918">Facebook</a> |
-        <a href="https://www.instagram.com/abrasif_italia_hg/">Instagram</a>
-      </div>
+      <p>Abrasif Italia</p>
+      <p>Email: support@abrasifitalia.com</p>
+      <p>Tél: +216 28182762</p>
       <p>&copy; ${new Date().getFullYear()} Abrasif Italia. Tous droits réservés.</p>
     </div>
   </div>

@@ -58,7 +58,7 @@ const registerClient = async (req, res) => {
                 type: 'auth',
                 to: email,
                 subject: 'Bienvenue chez Abrasif Italia',
-                html: sendOnboardingEmail({
+                html: onboardingTemplate({
                     firstName,
                     lastName
                 })
