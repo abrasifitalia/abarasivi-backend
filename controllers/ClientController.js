@@ -1,6 +1,6 @@
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
-const sendOnboardingEmail = require('./Mailing/_onboarding');
+const sendOnboardingEmail = require('../utils/mailing-templates/_onboarding');
 const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
@@ -55,14 +55,15 @@ const registerClient = async (req, res) => {
 
         // Send both onboarding and verification emails
         try {
-            // Send onboarding email (existing feature)
-            await sendOnboardingEmail({
+            // Send onboarding email first
+            const onboardingResult = await sendOnboardingEmail({
                 email,
                 firstName,
                 lastName
             });
+            console.log('Onboarding email status:', onboardingResult);
 
-            // Send verification email (new feature)
+            // Send verification email
             await mailService.sendMail({
                 type: 'auth',
                 to: email,
@@ -73,7 +74,7 @@ const registerClient = async (req, res) => {
                 })
             });
 
-            console.log('Onboarding and verification emails sent successfully');
+            console.log('All emails sent successfully');
         } catch (emailError) {
             console.error('Error sending emails:', emailError);
             // Don't fail registration if email sending fails
@@ -132,8 +133,8 @@ const loginClient = async (req, res) => {
             });
         }
 
-        // Check if email is verified
-        if (!client.isEmailVerified) {
+        // Check if email is verified - skip for old users without verification field
+        if (client.emailVerificationCode !== undefined && !client.isEmailVerified) {
             return res.status(403).json({
                 success: false,
                 message: 'Veuillez vérifier votre email avant de vous connecter',
