@@ -4,14 +4,18 @@ require('dotenv').config();
 
 class MailService {
   constructor() {
+    // Update SMTP configuration for Brevo
     this.transporter = nodemailer.createTransport({
-      host: process.env.BREVO_HOST,
-      port: process.env.BREVO_PORT,
+      host: "smtp-relay.brevo.com",  // Fixed host
+      port: 587,                     // Fixed port
       secure: false,
       auth: {
         user: process.env.BREVO_ID,
         pass: process.env.BREVO_PWD,
       },
+      tls: {
+        rejectUnauthorized: false    // Add for production
+      }
     });
 
     // Define email senders for different cases
@@ -24,6 +28,19 @@ class MailService {
     };
   }
 
+  // Add connection verification method
+  async verifyConnection() {
+    try {
+      await this.transporter.verify();
+      console.log('Mail server connection verified');
+      return true;
+    } catch (error) {
+      console.error('Mail server connection failed:', error);
+      return false;
+    }
+  }
+
+  // Update sendMail method with better error handling
   async sendMail(options) {
     try {
       // Determine the appropriate sender based on email type
@@ -51,17 +68,26 @@ class MailService {
         ],
       };
 
-      // Log email attempt (remove in production)
-      console.log(`Sending ${options.type || 'default'} email from: ${sender}`);
-
-      await this.transporter.sendMail(mailOptions);
-      console.log(`Email sent successfully to ${options.to}`);
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('Email sent successfully:', info.messageId);
       return true;
     } catch (error) {
       console.error('Error sending email:', error);
+      // Log detailed error for debugging in production
+      if (error.code === 'ESOCKET') {
+        console.error('SMTP Connection Details:', {
+          host: this.transporter.options.host,
+          port: this.transporter.options.port,
+          auth: this.transporter.options.auth.user
+        });
+      }
       return false;
     }
   }
 }
 
-module.exports = new MailService();
+// Create and verify instance
+const mailService = new MailService();
+mailService.verifyConnection();
+
+module.exports = mailService;
