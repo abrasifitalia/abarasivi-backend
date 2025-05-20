@@ -26,15 +26,12 @@ const registerClient = async (req, res) => {
             });
         }
 
-        // Debug log
-        console.log('Registration attempt:', { email, firstName, lastName });
-
         // Check if email already exists
         const existingClient = await Client.findOne({ email });
         if (existingClient) {
             return res.status(400).json({
                 success: false,
-                message: 'Email déjà utilisé'
+                message: 'Cette adresse email est déjà utilisée'
             });
         }
 
@@ -50,33 +47,61 @@ const registerClient = async (req, res) => {
             password,
             phone,
             emailVerificationCode: verificationCode,
-            emailVerificationExpires: verificationExpires
+            emailVerificationExpires: verificationExpires,
+            isEmailVerified: false // Explicitly set verification status
         });
 
         await client.save();
 
-        // Send verification email
-        await mailService.sendMail({
-            type: 'auth',
-            to: email,
-            subject: 'Vérification de votre compte Abrasif Italia',
-            html: verificationEmailTemplate({
+        // Send both onboarding and verification emails
+        try {
+            // Send onboarding email (existing feature)
+            await sendOnboardingEmail({
+                email,
                 firstName,
-                verificationCode
-            })
-        });
+                lastName
+            });
 
+            // Send verification email (new feature)
+            await mailService.sendMail({
+                type: 'auth',
+                to: email,
+                subject: 'Vérification de votre compte Abrasif Italia',
+                html: verificationEmailTemplate({
+                    firstName,
+                    verificationCode
+                })
+            });
+
+            console.log('Onboarding and verification emails sent successfully');
+        } catch (emailError) {
+            console.error('Error sending emails:', emailError);
+            // Don't fail registration if email sending fails
+        }
+
+        // Success response
         res.status(201).json({
             success: true,
             message: 'Compte créé avec succès. Veuillez vérifier votre email.',
-            email
+            email,
+            requiresVerification: true
         });
 
     } catch (error) {
         console.error('Registration error:', error);
+        
+        // Handle duplicate key error specifically
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cette adresse email est déjà utilisée'
+            });
+        }
+
         res.status(500).json({
             success: false,
-            message: 'Erreur lors de l\'inscription'
+            message: 'Erreur lors de l\'inscription',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
