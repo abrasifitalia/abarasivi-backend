@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const mailService = require('./Mailing/_mailmiddleware');
 const resetPasswordTemplate = require('../utils/mailing-templates/_reset_password');
 const bcrypt = require('bcryptjs');
+const verificationEmailTemplate = require('../utils/mailing-templates/_email_verification');
 
 // Update the hashPassword utility
 const hashPassword = async (password) => {
@@ -37,50 +38,45 @@ const registerClient = async (req, res) => {
             });
         }
 
-        // Create new client - password will be hashed by the pre-save hook in the model
+        // Generate verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Create new client
         const client = new Client({
             firstName,
             lastName,
             email,
-            password, // Do not hash here, let the model's pre-save middleware handle it
-            phone
+            password,
+            phone,
+            emailVerificationCode: verificationCode,
+            emailVerificationExpires: verificationExpires
         });
 
         await client.save();
 
-        // Send onboarding email
-        try {
-            await sendOnboardingEmail({
-                email,
+        // Send verification email
+        await mailService.sendMail({
+            type: 'auth',
+            to: email,
+            subject: 'Vérification de votre compte Abrasif Italia',
+            html: verificationEmailTemplate({
                 firstName,
-                lastName
-            });
-            console.log('Onboarding email sent successfully');
-        } catch (emailError) {
-            console.error('Error sending onboarding email:', emailError);
-        }
-
-        // Generate token for automatic login
-        const token = jwt.sign(
-            { _id: client._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
+                verificationCode
+            })
+        });
 
         res.status(201).json({
             success: true,
-            message: 'Client enregistré avec succès !',
-            token,
-            clientId: client._id,
-            clientName: `${client.firstName} ${client.lastName}`
+            message: 'Compte créé avec succès. Veuillez vérifier votre email.',
+            email
         });
 
     } catch (error) {
         console.error('Registration error:', error);
         res.status(500).json({
             success: false,
-            message: 'Erreur lors de l\'inscription',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: 'Erreur lors de l\'inscription'
         });
     }
 };
@@ -108,6 +104,16 @@ const loginClient = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Identifiants invalides'
+            });
+        }
+
+        // Check if email is verified
+        if (!client.isEmailVerified) {
+            return res.status(403).json({
+                success: false,
+                message: 'Veuillez vérifier votre email avant de vous connecter',
+                needsVerification: true,
+                email: client.email
             });
         }
 
@@ -309,6 +315,106 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// Verify email
+const verifyEmail = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        const client = await Client.findOne({
+            email,
+            emailVerificationCode: code,
+            emailVerificationExpires: { $gt: Date.now() },
+            isEmailVerified: false
+        });
+
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Code de vérification invalide ou expiré'
+            });
+        }
+
+        // Update client verification status
+        client.isEmailVerified = true;
+        client.emailVerificationCode = null;
+        client.emailVerificationExpires = null;
+        await client.save();
+
+        // Generate token for automatic login
+        const token = jwt.sign(
+            { _id: client._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Email vérifié avec succès',
+            token,
+            clientId: client._id,
+            clientName: `${client.firstName} ${client.lastName}`
+        });
+
+    } catch (error) {
+        console.error('Email verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la vérification'
+        });
+    }
+};
+
+// Resend verification code
+const resendVerificationCode = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const client = await Client.findOne({ 
+            email,
+            isEmailVerified: false 
+        });
+
+        if (!client) {
+            return res.status(404).json({
+                success: false,
+                message: 'Client non trouvé ou déjà vérifié'
+            });
+        }
+
+        // Generate new verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        client.emailVerificationCode = verificationCode;
+        client.emailVerificationExpires = verificationExpires;
+        await client.save();
+
+        // Send new verification email
+        await mailService.sendMail({
+            type: 'auth',
+            to: email,
+            subject: 'Nouveau code de vérification - Abrasif Italia',
+            html: verificationEmailTemplate({
+                firstName: client.firstName,
+                verificationCode
+            })
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Nouveau code de vérification envoyé',
+            email
+        });
+
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de l\'envoi du nouveau code'
+        });
+    }
+};
+
 module.exports = { 
     registerClient, 
     loginClient, 
@@ -316,5 +422,7 @@ module.exports = {
     getAllClients, 
     deleteClient,
     requestPasswordReset,
-    resetPassword
+    resetPassword,
+    verifyEmail,
+    resendVerificationCode
 };

@@ -44,6 +44,18 @@ const clientSchema = new mongoose.Schema({
     verificationCodeExpires: {
         type: Date,
         default: null
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerificationCode: {
+        type: String,
+        default: null
+    },
+    emailVerificationExpires: {
+        type: Date,
+        default: null
     }
 });
 

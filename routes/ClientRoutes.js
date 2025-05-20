@@ -7,7 +7,9 @@ const {
     getAllClients, 
     deleteClient,
     requestPasswordReset,
-    resetPassword
+    resetPassword,
+    verifyEmail,
+    resendVerificationCode
 } = require('../controllers/ClientController');
 const auth = require('../middlewares/auth');
 
@@ -19,5 +21,9 @@ router.get('/list', getAllClients);
 router.delete('/:id', deleteClient);
 router.post('/request-reset', requestPasswordReset);
 router.post('/reset-password', resetPassword);
+
+// Add new routes
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationCode);
 
 module.exports = router;
